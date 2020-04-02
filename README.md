@@ -1,4 +1,4 @@
-# Tensor Flow cheat sheet
+# TensorFlow cheat sheet
 
 These are notes that were written while following the coursera course, Intro to Tensor Flow
 
@@ -58,14 +58,14 @@ with tf.Session() as sess:
         a1, a3 = sess.run([z1, z3])
 ```
 
-Running the above code will create a new directory called 'summaries'
+Running the above code will create a new directory called 'summaries'.
 To view the graph(which is not in human readable form) we use a Tensor board.
 ```python
 from google.datalab.ml import TensorBoard
 TensorBoard().start('./summaries')
 ```
 
-Run the following command directly from CloudShell to start TensorBoard
+Run the following command directly from CloudShell(online tool) to start TensorBoard
 
 `tensorboard --port 8080 --logdir gs://${BUCKET}/${SUMMARY_DIR}`
 
@@ -135,3 +135,42 @@ with tf.Session() as sess:
 # feed_dict = here you must place a list or a numpy array of numbers for the placeholder a
 ```
 
+#### Batch size(Variable length tensors)
+```python
+n_input = tf.constant([3])
+X = tf.placeholder(tf.float32, [None, n_input])
+# Here, "None" tells us that there may be variable number of rows but a fixed size of 3 columns
+```
+
+#### Shape coercing(changing) can be done using these methods
+1. `tf.reshape()` Takes the numbers we have and puts them into a different shape
+2. `tf.expand_dims()` Way of changing a shape by inserting a dimension of 1 into a tensor
+    * If x is a (3, 2) matrix. Calling `tf.expand_dims(x, 1)` will make the dimension of x as (3, 1, 2).
+3. `tf.slice()` This is the actual method of `x[1, :]`
+    * tf.slice(x, [0, 1], [2, 1]): slice x from (0, 1) element and take out two rows and one column.
+4. `tf.squeeze()` Removes dimensions of size 1 from the shape of a tensor
+
+
+#### Converting data types
+`tf.cast()` is used to convert from one data type to the other.
+
+Ex. `tf.cast(b, tf.float32)` converts b to data type float32.
+
+
+#### Some methods to debug full blown programs
+* `tf.Print()` is a way to print out the value of the tensors when specific conditions are met.
+* **tfdbg** is an interactice debugger that you can run from the terminal that you can attach to a remote tensorflow session.
+* **TensorBoard** is a visual monitoring tool.
+* `tf.logging.set_verosity(tf.logging.INFO)` is used to change the logging output of tensorflow. Levels are `DEBUG`, `INFO`,`WARN`,`ERROR`,`FATAL`
+    * 'DEBUG' is most quite
+    * 'FATAL' is most verbose
+
+Ex. of `tf.Print()` statement. Let us say dividing a/b is causing nan to show up in the matrix. Hence we want to see the values of a 
+and b that is causing this nan. One way we can do that is.
+```python
+s = a / b
+print_ab = tf.Print(s, [a, b])
+s = tf.where(tf.is_nan(s), print_ab, s)
+```
+
+This has to be done in a standalone program. Create another file and then execute this to see the error.
