@@ -162,7 +162,7 @@ Ex. `tf.cast(b, tf.float32)` converts b to data type float32.
 * **tfdbg** is an interactice debugger that you can run from the terminal that you can attach to a remote tensorflow session.
 * **TensorBoard** is a visual monitoring tool.
 * `tf.logging.set_verosity(tf.logging.INFO)` is used to change the logging output of tensorflow. Levels are `DEBUG`, `INFO`,`WARN`,`ERROR`,`FATAL`
-    * 'DEBUG' is most quite
+    * 'DEBUG' is most quiet
     * 'FATAL' is most verbose
 
 Ex. of `tf.Print()` statement. Let us say dividing a/b is causing nan to show up in the matrix. Hence we want to see the values of a 
@@ -174,3 +174,54 @@ s = tf.where(tf.is_nan(s), print_ab, s)
 ```
 
 This has to be done in a standalone program. Create another file and then execute this to see the error.
+
+
+## Estimator API
+
+#### Example of using a type of Estimator API 
+```python
+import tensorflow as tf
+
+# We define the feature columns.
+featcols = [
+    tf.feature_column.numeric_column('sq_footage'),
+    tf.feature_column.categorical_column_with_vocabulary_list('type', ["house", "apt"])
+]
+# Other columns include
+# bucketized_column
+# embedding_column
+# crossed_column
+# categorical_column_with_hash_bucket and so on
+
+# We now chose a model to train the data from the premade Estimator API's
+model = tf.estimator.LinearRegressor(featcols, '${dir_name_to_output_checkpoints}')
+# Other estimators are
+# DNNRegressor(Dense Neural Network)
+# DNNLinearCombinedRegressor
+# LinearClassifier
+# DNNClassifier
+# DNNLinearCombinedClassifier and so on
+
+# We will now call train to train the model iteratively a 100 times.
+model.train(train_input_fn, steps=100)
+
+# We will predict the values for a given input
+model.predict(predict_input_fn)
+
+def train_input_fn():
+    features = {
+        "sq_footage": [1000, 2000, 3000, 1000, 2000, 3000],
+        "type": ["house", "house", "house", "apt", "apt", "apt"]
+    }
+
+    labels = [500, 1000, 1500, 700, 1300, 1900]
+    return features, labels
+
+def predict_input_fn():
+    features = {
+        "sq_footage": [1500, 1800],
+        "type": ["house", "apt"]
+    }
+
+    return features
+```
