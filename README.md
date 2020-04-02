@@ -175,8 +175,9 @@ s = tf.where(tf.is_nan(s), print_ab, s)
 
 This has to be done in a standalone program. Create another file and then execute this to see the error.
 
+***
 
-## Estimator API
+### Estimator API
 
 #### Example of using a type of Estimator API 
 ```python
@@ -224,4 +225,47 @@ def predict_input_fn():
     }
 
     return features
+```
+
+#### Dataset API
+
+`tf.data.Dataset` is how we call the dataset api
+Other types are 
+- .TextLineDataset
+- .TFRecordDataset
+- .FixedLengthRecordDataset
+
+
+##### Dataset instructions
+```python
+dataset = dataset.shuffle(1000) \ #Shuffle Buffer Size
+                .repeat(15) \  # Nb of epochs
+                .batch(128)
+```
+
+##### Dataset insantiation eg
+```python
+def decode_line(txt_line):
+    cols = tf.decode_csv(txt_line, record_defaults=[[0], 'house', [0]])
+    features = {'sq_footage': cols[0], 'type': cols[1]}
+    labels = cols[2]
+    return features, labels
+
+dataset = tf.data.TextLineDataset("name_of_csv_file") \ # Loads the file and splits it into lines
+                                    .map(decode_line) # transform the lines and split the lines into data items
+
+# Creating the input function for our model
+def input_fn():
+    features, labels = dataset.make_one_shot_iterator().get_next() # You are getting a tensor flow node 
+    # that each time it gets executed during training returns a batch of training data.
+    return features, labels
+
+model.train(input_fn)
+```
+
+To load large datasets from a set of files, we execute the following
+```python
+dataset = tf.data.Dataset.list_files("train.csv-*") \ # Loads all the files and turns each filename into a dataset of text lines 
+                                .flat_map(tf.data.TextLineDataset) \ # Flatmap all of the files into a single dataset
+                                .map(decode_line) # apply map to each line(file)
 ```
