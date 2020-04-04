@@ -243,7 +243,7 @@ dataset = dataset.shuffle(1000) \ #Shuffle Buffer Size
                 .batch(128)
 ```
 
-##### Dataset insantiation eg
+##### Dataset instantiation eg.
 ```python
 def decode_line(txt_line):
     cols = tf.decode_csv(txt_line, record_defaults=[[0], 'house', [0]])
@@ -269,3 +269,74 @@ dataset = tf.data.Dataset.list_files("train.csv-*") \ # Loads all the files and 
                                 .flat_map(tf.data.TextLineDataset) \ # Flatmap all of the files into a single dataset
                                 .map(decode_line) # apply map to each line(file)
 ```
+
+#### Big jobs, Distributed training
+
+`estimator.train_and_evaluate(estimator, ...)`, is the preferred training method for real world problems.
+This is the function that implements distributed training.
+
+
+RunConfig API tells the estimator where and how often to write Checkpoints and TensorBoard logs.
+```python
+run_config = tf.estimator.RunConfig(
+                        model_dir=output_dir,
+                        save_summart_steps=100,
+                        save_checkpoint_steps=2000
+)
+
+estimator = tf.estimator.LinearRegressor(config=run_config, ...)
+```
+
+TrainSpec API tells the estimator how to get the data.
+```python
+train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=50000)
+```
+
+EvalSpec API controls the evaluation and the checkpointing of the model since they happen at the same time.
+```python
+eval_spec = tf.estimator.EvalSpec(
+                    input_fn=eval_input_fn,
+                    steps=100, #evals on hundred batches
+                    throttle=600, # eval no more than every 10 min
+                    exporters=... # control how the model is exported for deployment to production
+)
+
+```
+
+Serving Input function transforms the parsed JSON data to the data your models expect. (This is used when
+the model recieves the data from an external source via JSON)
+```python
+def serving_input_fn():
+    json = {'sq_footage': tf.placeholder(tf.int32, [ None ]) # None, here refers to batch size
+            'prop_type': tf.placeholder(tf.string, [None])
+        }
+    # transformations
+
+    features = {
+            'sq_footage': json['sq_footage'],
+            'type': json['prop_type'],
+    }
+
+    return tf.estimator.export.ServingInputReciever(features, json)
+```
+
+##### Entire code recap
+```python
+run_config = 
+tf.estimator.RunConfig(model_dir=output_dir, ...)
+
+estimator =
+tf.estimator.LinearRegressor(feat_cols, config=run_config) 
+
+train_spec =
+tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=50000)
+
+export_latest = 
+tf.estimator.LatestExporter(serving_input_reciever_fn=serving_input_fn)
+
+eval_spec = 
+tf.estimator.EvalSpec(input_fn=eval_input_fn, exporters=export_latest)
+
+tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+```
+
