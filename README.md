@@ -194,6 +194,13 @@ featcols = [
 # crossed_column
 # categorical_column_with_hash_bucket and so on
 
+# The following function can be used to one hot encode a categorical column
+# Provide the name of the column in 'name' and the values the column may hold in 'values'
+def get_categorical(name, values):
+    return tf.feature_column.indicator_column(
+        tf.feature_column.categorical_column_with_vocabulary_list(name, values))
+
+
 # We now chose a model to train the data from the premade Estimator API's
 model = tf.estimator.LinearRegressor(featcols, '${dir_name_to_output_checkpoints}')
 # Other estimators are
